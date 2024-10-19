@@ -1,5 +1,6 @@
 'use client'
 import { client } from "@/app/client";
+import { useAuthContext } from "@/app/context/AuthContext";
 import { ConnectButton } from "thirdweb/react";
 
 import {
@@ -29,6 +30,7 @@ const wallets = [
 ];
 
 const SignInButton = () => {
+  const {login} = useAuthContext();
   return (
     <ConnectButton
       client={client}
@@ -36,8 +38,9 @@ const SignInButton = () => {
       connectModal={{ size: "compact" }}
       appMetadata={{
         name: "Voucher System",
-        url: "https://example.com",
+        url: "https://vouch4edu.vercel.app",
       }}
+      onConnect={(wallet) => login(wallet.getAccount().address)}
     />
   );
 }
