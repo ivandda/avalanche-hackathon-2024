@@ -4,16 +4,23 @@ pragma solidity ^0.8.19;
 import "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 import "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import "@avalabs/subnet-evm-contracts/contracts/teleporter/ITeleporterMessenger.sol";
-import "@avalabs/subnet-evm-contracts/contracts/teleporter/ITeleporterReceiver.sol";
+import {ITeleporterReceiver} from "./icm/ITeleporterReceiver.sol";
+import {ITeleporterMessenger, TeleporterMessageInput, TeleporterFeeInfo} from "./icm/ITeleporterMessenger.sol";
+import "./icm/SenderAction.sol";
 
-contract StudentStatusChecker is FunctionsClient, ConfirmedOwner, ITeleporterReceiver {
+// The IntegratedAssetPoolChecker contract is a key component of the EduChain system,
+// deployed on the Avalanche C-Chain (mainnet/testnet). This smart contract is responsible
+// for monitoring and reporting the total value of the government's asset pool dedicated to
+// educational funding. Assets can be multiple types, Cryptocurrencies on various chains,
+// Tokenized real-world assets, or even Traditional financial assets (represented on-chain)
+
+contract IntegratedAssetPoolChecker is FunctionsClient, ConfirmedOwner, ITeleporterReceiver {
     using FunctionsRequest for FunctionsRequest.Request;
 
     bytes32 public s_lastRequestId;
     bytes public s_lastResponse;
     bytes public s_lastError;
-    uint256 public studentStatus;
+    string public totalValue;
 
     // Teleporter messenger
     ITeleporterMessenger public immutable messenger;
@@ -28,21 +35,18 @@ contract StudentStatusChecker is FunctionsClient, ConfirmedOwner, ITeleporterRec
     bytes32 private immutable i_donId;
     uint32 private constant FUNCTIONS_GAS_LIMIT = 300000;
 
-    string private constant SOURCE =
-        "const studentId = args[0];"
-        "const minGrade = args[1];"
-        "const minAssistance = args[2];"
+    string private constant SOURCE = "const walletAddress = args[0];"
         "const apiResponse = await Functions.makeHttpRequest({"
-        "url: `https://vouch4edu.vercel.app/api/university-mock-api?studentId=${studentId}&minGrade=${minGrade}&minAssistance=${minAssistance}`,"
+        "url: `https://vouch4edu.vercel.app/api/founding-pool-mock-api?walletAddress=${walletAddress}`,"
         "method: 'GET'"
         "});"
         "if (apiResponse.error) {"
         "throw Error('API request failed');"
         "}"
         "const { data } = apiResponse;"
-        "return Functions.encodeUint256(data.number);";
+        "return Functions.encodeString(data.totalUsdValue);";
 
-    event StudentStatusChecked(bytes32 indexed requestId, uint256 status);
+    event AssetPoolChecked(bytes32 indexed requestId, string totalValue, bytes response, bytes err);
 
     constructor(
         address router,
@@ -53,7 +57,7 @@ contract StudentStatusChecker is FunctionsClient, ConfirmedOwner, ITeleporterRec
         i_router = router;
         i_subscriptionId = subscriptionId;
         i_donId = donId;
-        messenger = ITeleporterMessenger(_messenger);
+        messenger =  ITeleporterMessenger(0x253b2784c75e510dD0fF1da844684a1aC0aa5fcf);
     }
 
     function receiveTeleporterMessage(
@@ -67,21 +71,19 @@ contract StudentStatusChecker is FunctionsClient, ConfirmedOwner, ITeleporterRec
         lastSourceBlockchainID = sourceBlockchainID;
         lastOriginSenderAddress = originSenderAddress;
 
-        // Decode the student details from the message
-        (uint256 studentId, uint256 minGrade, uint256 minAssistance) = abi.decode(message, (uint256, uint256, uint256));
+        // Decode the wallet address from the message
+        string memory walletAddress = abi.decode(message, (string));
 
         // Trigger the Chainlink function
-        checkStudentStatus(studentId, minGrade, minAssistance);
+        checkAssetsPool(walletAddress);
     }
 
-    function checkStudentStatus(uint256 studentId, uint256 minGrade, uint256 minAssistance) private {
+    function checkAssetsPool(string memory walletAddress) private {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(SOURCE);
 
-        string[] memory args = new string[](3);
-        args[0] = Strings.toString(studentId);
-        args[1] = Strings.toString(minGrade);
-        args[2] = Strings.toString(minAssistance);
+        string[] memory args = new string[](1);
+        args[0] = walletAddress;
         req.setArgs(args);
 
         s_lastRequestId = _sendRequest(
@@ -99,9 +101,9 @@ contract StudentStatusChecker is FunctionsClient, ConfirmedOwner, ITeleporterRec
     ) internal override {
         s_lastResponse = response;
         s_lastError = err;
-        studentStatus = abi.decode(response, (uint256));
+        totalValue = string(response);
 
-        emit StudentStatusChecked(requestId, studentStatus);
+        emit AssetPoolChecked(requestId, totalValue, s_lastResponse, s_lastError);
 
         // Send the response back via Teleporter
         sendTeleporterResponse();
@@ -117,7 +119,7 @@ contract StudentStatusChecker is FunctionsClient, ConfirmedOwner, ITeleporterRec
                 feeInfo: TeleporterFeeInfo({feeTokenAddress: address(0), amount: 0}),
                 requiredGasLimit: 100000,
                 allowedRelayerAddresses: new address[](0),
-                message: abi.encode(studentStatus)
+                message: abi.encode(SenderAction.pool, totalValue)
             })
         );
 
