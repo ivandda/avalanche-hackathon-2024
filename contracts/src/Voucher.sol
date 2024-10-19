@@ -15,7 +15,7 @@ import "./icm/SenderAction.sol";
 // This contract is deployed on our Layer 1 blockchain. 
 // Represents a ERC1155 voucher that is deployed by the government for each student. Th fractions are minted by the student
 // and burned by the university. The voucher can be used by the student to pay for their tuition fees. The voucher is only valid if the student
-// has a grade above a certain threshold and is not receiving any other financial assistance. The voucher can be revoked by the government
+// has a grade above a certain threshold and is assisting to class enought. The voucher can be revoked by the government
 // if the student is found to be cheating or if the student is doing badly in school.
 // Communicates with the ICM to get the current pool size and the student status from our C-Chain contracts
 contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, ITeleporterReceiver {
