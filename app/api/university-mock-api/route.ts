@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from "@/lib/dbConnect";
 import { Student } from "@/models";
 
+// This API simulates a university's student information system for the project.
+// It receives a student ID and academic thresholds, queries a mock university database, and returns
+// a binary eligibility status (1 for eligible, 0 for ineligible). The endpoint is designed
+// to be called by Chainlink Functions within the CheckAcademicStatus smart contract
+
 export async function GET(request: NextRequest) {
     await dbConnect();
 

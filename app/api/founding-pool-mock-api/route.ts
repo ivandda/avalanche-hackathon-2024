@@ -3,8 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 // import dbConnect from '@/lib/dbConnect';
 // import { Government } from "@/models";
 
-// This endpoint works on main net, but we are using testnet for this project,
-// so the usd_value of the tokens is always cero.
+//This API interfaces with the government's educational funding pool,
+// a diverse portfolio of assets dedicated to supporting and guaranteeing public education founds.
+//  The endpoint is designed to be called by Chainlink Functions within the
+//  CheckPoolFounds smart contract
+
+// This endpoint works on main net, but we are using testnet for this project, so the usd_value of the tokens is always cero.
+// Because of this, we are going to use a mock api call to Moralis to get the totalUsdValue of the wallet.
+
 
 // // Initialize Moralis
 // Moralis.start({
