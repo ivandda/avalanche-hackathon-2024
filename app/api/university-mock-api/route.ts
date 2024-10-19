@@ -21,12 +21,14 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Student not found' }, { status: 404 });
         }
 
-        return NextResponse.json({
-            gradeAvg: student.averageGrade,
-            passGradeThreshold: student.averageGrade >= minGrade,
-            assistancePercentage: student.assistancePercentage,
-            passAssistanceThreshold: student.assistancePercentage >= minAssistance
-        });
+        const passGradeThreshold = student.averageGrade >= minGrade;
+        const passAssistanceThreshold = student.assistancePercentage >= minAssistance;
+
+        if (passGradeThreshold && passAssistanceThreshold) {
+            return NextResponse.json({ number: 1});
+        } else {
+            return NextResponse.json({ number: 0 });
+        }
     } catch (error) {
         console.error('Error in student-status-api:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

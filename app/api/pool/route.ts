@@ -79,5 +79,5 @@ export async function GET(request: NextRequest) {
   }
 
   const totalUsdValue = calculateTotalUsdValue(tokenBalancesAndPrices);
-  return NextResponse.json({ walletAddress, totalUsdValue: totalUsdValue.toFixed(2) });
+  return NextResponse.json({ totalUsdValue: totalUsdValue.toFixed(2) });
 }
