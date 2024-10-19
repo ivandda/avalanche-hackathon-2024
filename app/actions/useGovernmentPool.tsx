@@ -9,7 +9,7 @@ const useGovernmentPool = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/pool');
+        const response = await fetch('/api/pool?walletAddress=0x1234567890abcdef1234567890abcdef12345678');
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }

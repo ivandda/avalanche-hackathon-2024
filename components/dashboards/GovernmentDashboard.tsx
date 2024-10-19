@@ -1,4 +1,5 @@
-import { CardBalance } from "./cards/CardBalance";
+import ActiveApplicationsCard from "./cards/ActiveApplicationsCard";
+import PoolCard from "./cards/PoolCard";
 
 const GovernmentDashboard: React.FC = () => {
   return (
@@ -9,16 +10,16 @@ const GovernmentDashboard: React.FC = () => {
         <div className="flex flex-col gap-2">
           <h3 className="text-xl font-semibold">Available Balance</h3>
           <div className="grid md:grid-cols-2 grid-cols-1 2xl:grid-cols-3 gap-5  justify-center w-full">
-            <CardBalance />
-            <CardBalance />
+            <PoolCard />
+            <ActiveApplicationsCard />
           </div>
         </div>
 
         {/* Chart */}
         <div className="h-full flex flex-col gap-2">
-          <h3 className="text-xl font-semibold">Statistics</h3>
+          <h3 className="text-xl font-semibold">Applications</h3>
           <div className="w-full bg-default-50 shadow-lg rounded-2xl p-6 ">
-            {/* <Chart /> */}
+            {/* <TableWrapper />  */}
           </div>
         </div>
       </div>
