@@ -11,14 +11,19 @@ import {ITeleporterReceiver} from "./icm/ITeleporterReceiver.sol";
 import {ITeleporterMessenger, TeleporterMessageInput, TeleporterFeeInfo} from "./icm/ITeleporterMessenger.sol";
 import "./icm/SenderAction.sol";
 
-contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, ITeleporterReceiver {
 
+// This contract is deployed on our Layer 1 blockchain. 
+// Represents a ERC1155 voucher that is deployed by the government for each student. Th fractions are minted by the student
+// and burned by the university. The voucher can be used by the student to pay for their tuition fees. The voucher is only valid if the student
+// has a grade above a certain threshold and is not receiving any other financial assistance. The voucher can be revoked by the government
+// if the student is found to be cheating or if the student is doing badly in school.
+contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, ITeleporterReceiver {
     
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE"); // funding entity
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE"); // student
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE"); // university
 
-    uint256 public MAX_SUPPLY;
+    uint256 public MAX_SUPPLY; // total supply of credits for the voucher
     address public RECEIVING_UNIVERSITY;
     uint256 public STUDENT_ID;
     uint256 public VOUCHER_EXPIRATION;
@@ -137,6 +142,8 @@ contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, ITel
         _burn(owner, id, value);
     }
 
+    // The following functions allow ICM to work 
+    
     function receiveTeleporterMessage(bytes32, address, bytes calldata message) external {
         // Only the Teleporter receiver can deliver a message.
         require(
@@ -172,14 +179,7 @@ contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, ITel
     }
 
 
-    // The following functions are overrides required by Solidity.
-
-    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
-        internal
-        override(ERC1155, ERC1155Supply)
-    {
-        super._update(from, to, ids, values);
-    }
+    // The following functions are overrides to make the token non-transferable.
 
     function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes memory data) 
         public pure 
@@ -196,6 +196,15 @@ contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, ITel
         bytes memory data
     ) public pure override(ERC1155) {
         revert MethodNotAllowed("Token not transferable");
+    }
+
+    // The following functions are overrides required by Solidity.
+
+    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
+        internal
+        override(ERC1155, ERC1155Supply)
+    {
+        super._update(from, to, ids, values);
     }
 
     function supportsInterface(bytes4 interfaceId)
