@@ -7,19 +7,16 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
-import { FunctionsClient } from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
-import { FunctionsRequest } from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import { ConfirmedOwner } from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
+import {ITeleporterReceiver} from "./icm/ITeleporterReceiver.sol";
+import {ITeleporterMessenger, TeleporterMessageInput, TeleporterFeeInfo} from "./icm/ITeleporterMessenger.sol";
+import "./icm/SenderAction.sol";
 
-contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, FunctionsClient, ConfirmedOwner {
+contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, ITeleporterReceiver {
+
+    
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE"); // funding entity
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE"); // student
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE"); // university
-
-    using FunctionsRequest for FunctionsRequest.Request;
-    bytes32 public donId = bytes32(0x66756e2d6176616c616e6368652d66756a692d31000000000000000000000000); 
-    uint64 private subscriptionId = 13696; // Subscription ID for the Chainlink Functions
-    uint32 private gasLimit; // Gas limit for the Chainlink Functions callbacks
 
     uint256 public MAX_SUPPLY;
     address public RECEIVING_UNIVERSITY;
@@ -31,46 +28,25 @@ contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, Func
     uint256 public mintedSoFar;
     uint256 public averageGrade;
     uint256 public assistancePercentage;
+    uint256 public currentPoolSize;
+    address public government;
+    address public poolApi;
+    address public studentApi;
 
-    struct GradeAPIResponse {
-        uint gradeAvg;
-        bool passGradeThreshold;
-        uint assistancePercentage;
-        bool passAssistanceThreshold;
+    error MethodNotAllowed(string message);
+
+    struct Message {
+        address sender;
+        string message;
     }
+    mapping(bytes32 => Message) private messages;
+    error Unauthorized();
 
-    struct AssetPoolAPIResponse {
-        uint256 balanceInUSD;
-    }
+    ITeleporterMessenger public immutable teleporterMessenger = ITeleporterMessenger(0x253b2784c75e510dD0fF1da844684a1aC0aa5fcf);
 
-    string private constant SOURCE_GRADES_INFO =
-        "const id = args[0];"
-        "const minGrade = args[1];"
-        "const minAssistance = args[2];"
-        "const currentGradeResponse = await Functions.makeHttpRequest({"
-        "url: `https://vouch4edu.vercel.app/mock/grades/${id}?minGrade=${minGrade}&minAssistance=${minAssistance}/`,"
-        "});"
-        "if (currentGradeResponse.error) {"
-        "throw new Error('Error getting student current grades');"
-        "}"
-        "const result = currentGradeResponse.data;"
-        "return Functions.encodeString(result);";
-
-    string private constant SOURCE_POOL_INFO =
-        "const currentPoolResponse = await Functions.makeHttpRequest({"
-        "url: `https://vouch4edu.vercel.app/pool/usd/`,"
-        "});"
-        "if (currentPoolResponse.error) {"
-        "throw new Error('Error getting pool price');"
-        "}"
-        "const result = currentPoolResponse.data;"
-        "return Functions.encodeString(result);";
-
-    event RequestFailed(bytes error);
-
-    constructor(address _defaultAdmin, address _minter, uint256 _maxSupply, address _university, uint256 _expiration, uint32 _gasLimit,
+    constructor(address _defaultAdmin, address _minter, uint256 _maxSupply, address _university, uint256 _expiration,
     uint256 _studentId, uint256 minGrade, uint256 minAssistance) 
-        ERC1155("") FunctionsClient(address(0xA9d587a00A31A52Ed70D6026794a8FC5E2F5dCb0)) ConfirmedOwner(msg.sender) {
+        ERC1155("") {
         require(_expiration > block.timestamp, "Expiration must be in the future");
         require(_maxSupply > 0, "Supply should be positive");
         _grantRole(DEFAULT_ADMIN_ROLE, _defaultAdmin);
@@ -84,15 +60,51 @@ contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, Func
         VOUCHER_EXPIRATION = _expiration;
         GRADE_THRESHOLD = minGrade;
         ASSISTANCE_THRESHOLD = minAssistance;
-        gasLimit = _gasLimit;
+        government = _defaultAdmin;
 
         status = 0;
         mintedSoFar = 0;
-
+        currentPoolSize = 100;
     }
 
     function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
         _setURI(newuri);
+    }
+
+    function addressToString(address _addr) internal pure returns (string memory) {
+        bytes32 value = bytes32(uint256(uint160(_addr)));
+        bytes memory alphabet = "0123456789abcdef";
+
+        bytes memory str = new bytes(42);
+        str[0] = '0';
+        str[1] = 'x';
+        for (uint256 i = 0; i < 20; i++) {
+            str[2 + i * 2] = alphabet[uint8(value[i + 12] >> 4)];
+            str[3 + i * 2] = alphabet[uint8(value[i + 12] & 0x0f)];
+        }
+        return string(str);
+    }
+
+    function uintToString(uint256 _i) internal pure returns (string memory) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint256 j = _i;
+        uint256 length;
+        while (j != 0) {
+            length++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(length);
+        uint256 k = length;
+        while (_i != 0) {
+            k = k - 1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
     }
 
     function mint(uint256 amount)
@@ -100,6 +112,17 @@ contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, Func
         onlyRole(MINTER_ROLE)
     {
         require(mintedSoFar+amount < MAX_SUPPLY, "Not enough credits");
+        //update funds and user status
+        string memory gov = addressToString(government);
+        string memory student = uintToString(STUDENT_ID);
+        sendMessage(poolApi, gov);
+        sendMessage(studentApi, student);
+
+        require(status != 4, "Student got their voucher revoked");
+        require(status != 3, "Students voucher expired");
+        require(status != 2, "Students voucher is out of supply");
+        require(currentPoolSize > amount,  "Government doesn't have enough funds");
+
         if(mintedSoFar+amount == MAX_SUPPLY) status = 2;
         mintedSoFar += amount;
         if(status == 0) status = 1;
@@ -114,71 +137,40 @@ contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, Func
         _burn(owner, id, value);
     }
 
-    function checkStudentStatus() external {
-        string[] memory args = new string[](3);
-        args[0] = Strings.toString(STUDENT_ID);
-        args[1] = Strings.toString(GRADE_THRESHOLD);
-        args[2] = Strings.toString(ASSISTANCE_THRESHOLD);
-
-        bytes32 requestId = _sendRequest(SOURCE_GRADES_INFO, args);
-
-    }
-
-    function _sendRequest(
-        string memory source,
-        string[] memory args
-    ) internal returns (bytes32 requestId) {
-        FunctionsRequest.Request memory req;
-        req.initializeRequest(
-            FunctionsRequest.Location.Inline,
-            FunctionsRequest.CodeLanguage.JavaScript,
-            source
+    function receiveTeleporterMessage(bytes32, address, bytes calldata message) external {
+        // Only the Teleporter receiver can deliver a message.
+        require(
+            msg.sender == address(teleporterMessenger), "VoucherMessanger: unauthorized TeleporterMessenger"
         );
-        if (args.length > 0) {
-            req.setArgs(args);
+
+        // Decoding the Action type:
+        (SenderAction actionType, bytes memory paramsData) = abi.decode(message, (SenderAction, bytes));
+
+        // Route to the appropriate function.
+        if (actionType == SenderAction.pool) {
+            (uint256 pool) = abi.decode(paramsData, (uint256));
+            currentPoolSize = pool;
+        } else if (actionType == SenderAction.student) {
+            (uint256 studentCanMint) = abi.decode(paramsData, (uint256));
+            if(studentCanMint == 0) status = 4;
+        } else {
+            revert("ReceiverOnSubnet: invalid action");
         }
-        requestId = _sendRequest(
-            req.encodeCBOR(),
-            subscriptionId,
-            gasLimit,
-            donId
+    }
+
+    function sendMessage(address destinationAddress, string memory message) internal {
+        teleporterMessenger.sendCrossChainMessage(
+            TeleporterMessageInput({
+                destinationBlockchainID: 0x7fc93d85c6d62c5b2ac0b519c87010ea5294012d1e407030d6acd0021cac10d5,
+                destinationAddress: destinationAddress,
+                feeInfo: TeleporterFeeInfo({feeTokenAddress: address(0), amount: 0}),
+                requiredGasLimit: 200000,
+                allowedRelayerAddresses: new address[](0),
+                message: abi.encode(message)
+            })
         );
     }
 
-    function fulfillRequest(
-        bytes32 requestId,
-        bytes memory response,
-        bytes memory err
-    ) internal override {
-        if (err.length > 0) {
-            emit RequestFailed(err);
-            return;
-        }
-        _processResponse(requestId, response);
-    }
-
-    function _processResponse(
-        bytes32 requestId,
-        bytes memory response
-    ) private {
-        // requests[requestId].response = string(response);
-
-        // uint index = requests[requestId].index;
-        // string memory tokenId = requests[requestId].tokenId;
-
-        // // store: latest price for a given `tokenId`.
-        // latestPrice[tokenId] = string(response);
-
-        // // gets: houseInfo[tokenId]
-        // House storage house = houseInfo[index];
-
-        // // updates: listPrice for a given `tokenId`.
-        // house.listPrice = string(response);
-        // // updates: lastUpdate for a given `tokenId`.
-        // house.lastUpdate = block.timestamp;
-
-        // emit LastPriceReceived(requestId, string(response));
-    }
 
     // The following functions are overrides required by Solidity.
 
@@ -187,6 +179,23 @@ contract Voucher is ERC1155, AccessControl, ERC1155Burnable, ERC1155Supply, Func
         override(ERC1155, ERC1155Supply)
     {
         super._update(from, to, ids, values);
+    }
+
+    function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes memory data) 
+        public pure 
+        override(ERC1155) 
+    {
+        revert MethodNotAllowed("Token not transferable");
+    }
+
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values,
+        bytes memory data
+    ) public pure override(ERC1155) {
+        revert MethodNotAllowed("Token not transferable");
     }
 
     function supportsInterface(bytes4 interfaceId)
