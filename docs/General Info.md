@@ -36,46 +36,35 @@
 
 ## MVP Components Breakdown
 
-1. **Government Asset Pool**
-   - Smart contract on Avalanche L1 to manage funds
-   - Functions: deposit, withdraw, check balance
-   - Chainlink integration: Use Chainlink Functions to verify government fund transfers
-
-2. **Digital Vouchers**
-   - Implement as non-fungible tokens (NFTs) on Avalanche L1
+1. **Digital Vouchers**
+   - Implemented as fractionalized non-fungible tokens (ERC1155) on a Custom Avalanche L1
    - Metadata: value, expiration, basic performance criteria
-   - Minting function for government use
+   - Deplyment function for government use
+   - Minting functio for student use
 
-3. **University Payment System**
-   - Smart contract for universities to accept voucher payments
-   - Function for universities to redeem credits for funds
-   - Use Teleporter to communicate payment info between Fuji and custom L1
-
-4. **Simplified Student Performance Tracking**
+2. **Simplified Student Performance Tracking**
    - Basic smart contract for universities to update student status
+   - Deployed in Fuji to take advantage of Chainlink Functions
    - Simple pass/fail criteria based on predefined thresholds
+   - Using Teleporter to communicate info info between Fuji and custom L1
+
+3. **Simplified Government Funds Tracking**
+   - Basic smart contract that connects off-chain to get information across multiple chains.
+   - Deployed in Fuji to take advantage of Chainlink Functions
+   - Value summed up in USD
+   - Using Teleporter to communicate info info between Fuji and custom L1
 
 5. **User Interface (Next.js 14)**
    - Student dashboard: View voucher status, make payments
    - University dashboard: Accept payments, update student status
    - Government dashboard: Mint vouchers, manage asset pool
 
-6. **Data Visualization (Glacier & Webhooks)**
-   - Create a dashboard displaying:
-     - Total funds in asset pool
-     - Number of active vouchers
-     - University payment statistics
-     - Basic student performance metrics
-
 ## Implementation Strategy
 
-1. Set up custom Avalanche L1 using AvaCloud
-2. Develop and deploy core smart contracts on the L1
+1. First, created a custom Avalanche L1 using AvaCloud
+2. Develop and deploy the ERC1155 on the L1
 3. Integrate Chainlink Functions for external data verification
 4. Implement Teleporter for cross-chain communication with Fuji testnet
-5. Create data indexing solution using Glacier
-6. Develop user interfaces with Next.js 14
-7. Set up visualization dashboards using Glacier & Webhooks
 
 ## Future Enhancements (Post-MVP)
 - Implement more complex performance tracking
