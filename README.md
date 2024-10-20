@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vouch4Edu
 
-## Getting Started
+## Contracts
+
+The deployed contracts are located in the ```contracts``` folder. Below is a list of the files found in this directory:
+
+### Contracts Overview
+1. CheckAcademicStatus.sol: Responsible for checking and validating the academic status of students. Uses Chainlink Functions
+2. CheckPoolFunds.sol: Manages and verifies the available funds in the pool for various operations. Uses Chainlink Functions
+3. Voucher.sol: Implements the voucher system, allowing all parties to manage educational vouchers. It's a ERC1155 Token. Connects to the other two via ICM.
+4. OnlyChainlinkIntegration.sol: Example only integrated with chainlink.
+
+#### For ICM:
+1. ITeleporterMessenger.sol: Interface for the Teleporter messenger, facilitating communication between contracts.
+2. ITeleporterReceiver.sol: Interface for receiving messages from the Teleporter, handling incoming data and actions.
+3. SenderAction.sol: Enum to communication with two different messages.
+
+### ABI Folder
+The ```abi``` folder contains the Application Binary Interfaces (ABIs) for the deployed contracts. These ABIs are essential for interacting with the contracts from the frontend or other applications.
+
+### Constants File
+The constants file includes all necessary configurations and constants required to run the contracts effectively. This may include addresses, network configurations, and any other settings essential for deployment and interaction.
+
+
+## Web App
 
 First, run the development server:
 
 ```bash
+npm install
+
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The web app has integration with Thirdweb for web3 auth. But is not finished and is not integrated with our contracts
