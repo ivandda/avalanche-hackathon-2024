@@ -75,10 +75,18 @@ export async function GET(request: NextRequest) {
   }
 
   const tokenBalancesAndPrices = [
-    { tokenBalance: 10, tokenUsdValue: 2, tokenSymbol: 'ETH' },
-    { tokenBalance: 5, tokenUsdValue: 3, tokenSymbol: 'AVAX' },
-    // Add more token objects as needed
-  ];
+      { tokenBalance: 10, tokenUsdValue: 2000, tokenSymbol: 'ETH' },
+      { tokenBalance: 5, tokenUsdValue: 30, tokenSymbol: 'AVAX' },
+      { tokenBalance: 1000, tokenUsdValue: 1, tokenSymbol: 'USDT' },
+      { tokenBalance: 50, tokenUsdValue: 25, tokenSymbol: 'SOL' },
+      { tokenBalance: 0.5, tokenUsdValue: 30000, tokenSymbol: 'BTC' },
+      { tokenBalance: 100, tokenUsdValue: 0.5, tokenSymbol: 'XRP' },
+      { tokenBalance: 20, tokenUsdValue: 150, tokenSymbol: 'BNB' },
+      { tokenBalance: 75, tokenUsdValue: 1, tokenSymbol: 'DAI' },
+      { tokenBalance: 1000, tokenUsdValue: 1000, tokenSymbol: 'T_BOND' },// Tokenized Treasury Bonds
+      { tokenBalance: 500, tokenUsdValue: 10000, tokenSymbol: 'NAT_LAND' }, // Tokenized National Land
+      { tokenBalance: 100000, tokenUsdValue: 50, tokenSymbol: 'OIL_RES' }, // Tokenized Oil Reserves
+];
 
   function calculateTotalUsdValue(tokens: { tokenBalance: number, tokenUsdValue: number }[]): number {
     return tokens.reduce((total, token) => total + (token.tokenBalance * token.tokenUsdValue), 0);
