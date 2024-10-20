@@ -1,5 +1,6 @@
 import ActiveApplicationsCard from "./cards/ActiveApplicationsCard";
 import PoolCard from "./cards/PoolCard";
+import { TableWrapper } from "./table/table";
 
 const GovernmentDashboard: React.FC = () => {
   return (
@@ -18,9 +19,7 @@ const GovernmentDashboard: React.FC = () => {
         {/* Chart */}
         <div className="h-full flex flex-col gap-2">
           <h3 className="text-xl font-semibold">Applications</h3>
-          <div className="w-full bg-default-50 shadow-lg rounded-2xl p-6 ">
-            {/* <TableWrapper />  */}
-          </div>
+          <TableWrapper /> 
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 import "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
@@ -30,9 +31,9 @@ contract IntegratedAssetPoolChecker is FunctionsClient, ConfirmedOwner, ITelepor
     address public lastOriginSenderAddress;
 
     // Chainlink Functions variables
-    address private immutable i_router;
-    uint64 private immutable i_subscriptionId;
-    bytes32 private immutable i_donId;
+    address private immutable router;
+    uint64 private immutable subscriptionId;
+    bytes32 private immutable donId;
     uint32 private constant FUNCTIONS_GAS_LIMIT = 300000;
 
     string private constant SOURCE = "const walletAddress = args[0];"
@@ -49,14 +50,13 @@ contract IntegratedAssetPoolChecker is FunctionsClient, ConfirmedOwner, ITelepor
     event AssetPoolChecked(bytes32 indexed requestId, string totalValue, bytes response, bytes err);
 
     constructor(
-        address router,
-        uint64 subscriptionId,
-        bytes32 donId,
-        address _messenger
+        address _router,
+        uint64 _subscriptionId,
+        bytes32 _donId
     ) FunctionsClient(router) ConfirmedOwner(msg.sender) {
-        i_router = router;
-        i_subscriptionId = subscriptionId;
-        i_donId = donId;
+        router = _router;
+        subscriptionId = _subscriptionId;
+        donId = _donId;
         messenger =  ITeleporterMessenger(0x253b2784c75e510dD0fF1da844684a1aC0aa5fcf);
     }
 
@@ -88,9 +88,9 @@ contract IntegratedAssetPoolChecker is FunctionsClient, ConfirmedOwner, ITelepor
 
         s_lastRequestId = _sendRequest(
             req.encodeCBOR(),
-            i_subscriptionId,
+            subscriptionId,
             FUNCTIONS_GAS_LIMIT,
-            i_donId
+            donId
         );
     }
 

@@ -11,13 +11,13 @@ const MainDashboard: React.FC = () => {
 
   switch (userType) {
     case 'government':
-      return <GovernmentDashboard />;
+      return  <StudentDashboard />;
     case 'university':
       return <UniversityDashboard />;
     case 'student':
       return <StudentDashboard />;
     default:
-      return <LoginView />;
+      return <StudentDashboard />;
   }
 };
 

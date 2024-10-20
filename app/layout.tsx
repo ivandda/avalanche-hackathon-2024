@@ -32,14 +32,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NextUIProvider>
           <ThirdwebProvider>
             <AuthProvider>
-              <Header />
-              {children}
-            </AuthProvider>
+              <NextUIProvider>
+                <Header />
+                {children}
+               </NextUIProvider>
+             </AuthProvider>
           </ThirdwebProvider>
-        </NextUIProvider>
       </body>
     </html>
   );
