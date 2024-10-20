@@ -1,16 +1,16 @@
 'use client'
 import React from 'react';
 import {CardBalance} from './CardBalance';
-import useRemainingCredits from '@/app/actions/web3/useRemainingCredits';
+// import useRemainingCredits from '@/app/actions/web3/useRemainingCredits';
 
 const VoucherBalance: React.FC = () => {
-  const { balance, loading, error } = useRemainingCredits();
+  // const { balance, loading, error } = useRemainingCredits();
 
-  if (loading) {
+  if (true) {
     return <div>Loading...</div>;
   }
 
-  if(error) {
+  if(false) {
     return (
       <div>
         <CardBalance title='Credits Remaining' description='Credits left to emit' amount={1000} percentage={undefined}/>
@@ -20,7 +20,7 @@ const VoucherBalance: React.FC = () => {
 
   return (
     <div>
-      <CardBalance title='Credits Remaining' description='Credits left to emit' amount={balance} percentage={undefined}/>
+      {/* <CardBalance title='Credits Remaining' description='Credits left to emit' amount={balance} percentage={undefined}/> */}
     </div>
   );
 };
