@@ -1,5 +1,9 @@
 # Vouch4Edu
 
+## Pitch
+
+[Pitch slides](https://www.canva.com/design/DAGSELH2eP8/LfqSA_WBk0HwRpADdm9v9g/edit)
+
 ## Contracts
 
 The deployed contracts are located in the ```contracts``` folder. Below is a list of the files found in this directory:
